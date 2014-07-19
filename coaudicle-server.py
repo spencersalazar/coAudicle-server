@@ -14,12 +14,14 @@ bind = types.MethodType
 class Room(resource.Resource):
     isLeaf = False
     
-    def __init__(self, name):
+    def __init__(self, name, uuid=None):
         resource.Resource.__init__(self)
         
         self._members = []
         self._name = name
-        self._uuid = uuid.uuid4().hex
+        if uuid == None:
+            uuid = uuid.uuid4().hex
+        self._uuid = uuid
         self._actions = []
         
         # join action
@@ -87,8 +89,8 @@ class Rooms(resource.Resource):
         
         self._rooms = []
     
-    def addRoom(self, name):
-        room = Room(name)
+    def addRoom(self, name, uuid=None):
+        room = Room(name, uuid)
         self._rooms.append(room)
         self.putChild(room._uuid, room)
     
@@ -101,7 +103,7 @@ class Rooms(resource.Resource):
 root = resource.Resource()
 
 rooms = Rooms()
-rooms.addRoom('intro')
+rooms.addRoom('global', 'global')
 
 root.putChild('rooms', rooms)
 
