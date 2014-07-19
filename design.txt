@@ -1,0 +1,134 @@
+
+Within a given server, miniAudicle live-coding sessions are organized into individual rooms. After joining a room, all of the users actions in Play mode will be broadcasted and recreated for every other user in the room. 
+
+
+* REST API *
+
+TODO create room, public/private rooms
+
+===
+/rooms
+(GET) List all rooms on the server
+
+- Output (JSON) -
+[ 
+    {
+        name: "name",
+        uuid: "uuid"
+    },
+    (info of additional rooms)
+]
+
+=== 
+/rooms/{uuid}
+(GET) List members of the room
+
+- Output (JSON) -
+[
+    {
+        name: "username"
+    },
+    (info of additional users)
+]
+
+===
+/rooms/{uuid}/join
+(POST) Join the specified room
+
+- Input (www-form-urlencoded, mandatory) -
+id      globally unique user ID (ASCII)
+name    user's non-unique display handle (alphanumeric)
+
+- Output -
+(none)
+
+===
+/rooms/{uuid}/actions
+(GET) List all actions of the room. Exclude actions not after actionID, if it is provided. A client should poll this method frequently to receive new actions from other users in the session. 
+
+- Input (urlencoded GET string, optional) -
+after   only actions after this actionID are returned (numeric)
+
+- Output (JSON) -
+[
+    {
+        id: actionID,
+        user_id: 'uniqueUserID',
+        (additional action data - see ACTIONS)
+    },
+    (additional actions)
+]
+
+===
+/rooms/{uuid}/submit
+(POST) Submit action to the room for broadcast. 
+
+- Input (www-form-urlencoded, mandatory) -
+id      globally unique user ID (ASCII)     
+action  JSON string of action (see ACTIONS below)
+
+- Output -
+(None)
+
+
+* ACTIONS *
+
+TODO loop + sequence
+
+=== Join Room ===
+- JSON keys -
+id      (number) numeric id
+user_id (string) user uuid (globally unique)
+type    (string) always "join"
+name    (string) user name (displayed to user)
+
+=== Leave Room ===
+- JSON keys -
+id      (number) numeric id
+user_id (string) user uuid (globally unique)
+type    (string) always "leave"
+
+=== New Script ===
+- JSON keys -
+id      (number) numeric id
+user_id (string) user uuid
+type    (string) always "new"
+uuid    (string) script uuid (globally unique)
+name    (string) script name (e.g. title of file, displayed to user)
+code    (string) script ChucK code
+
+A script must have a corresponding New Script action before it can be added/removed/replaced. 
+
+=== Edit Script ===
+- JSON keys -
+id      (number) numeric id
+type    (string) always "edit"
+uuid    (string) code uuid
+name    (string, optional) new script name
+code    (string, optional) new ChucK code
+
+=== Delete Script ===
+- JSON keys -
+id      (number) numeric id
+type    (string) always "delete"
+uuid    (string) code uuid
+
+=== Add Shred ===
+- JSON keys -
+id      (number) numeric id
+type    (string) always "add"
+uuid    (string) code uuid
+
+=== Remove Shred ===
+- JSON keys -
+id      (number) numeric id
+type    (string) always "remove"
+uuid    (string) code uuid
+
+=== Replace Shred ===
+- JSON keys -
+id      (number) numeric id
+type    (string) always "replace"
+uuid    (string) code uuid
+
+
