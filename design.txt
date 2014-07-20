@@ -36,11 +36,11 @@ TODO create room, public/private rooms
 (POST) Join the specified room
 
 - Input (www-form-urlencoded, mandatory) -
-id      globally unique user ID (ASCII)
-name    user's non-unique display handle (alphanumeric)
+user_id     globally unique user ID (ASCII)
+user_name   user's non-unique display handle (alphanumeric)
 
 - Output -
-(none)
+{ status: 200, msg: "OK" }
 
 ===
 /rooms/{uuid}/actions
@@ -68,7 +68,7 @@ id      globally unique user ID (ASCII)
 action  JSON string of action (see ACTIONS below)
 
 - Output -
-(None)
+{ status: 200, msg: "OK" }
 
 
 * ACTIONS *
@@ -93,7 +93,7 @@ type    (string) always "leave"
 id      (number) numeric id
 user_id (string) user uuid
 type    (string) always "new"
-uuid    (string) script uuid (globally unique)
+code_id (string) script uuid (globally unique)
 name    (string) script name (e.g. title of file, displayed to user)
 code    (string) script ChucK code
 
@@ -103,7 +103,7 @@ A script must have a corresponding New Script action before it can be added/remo
 - JSON keys -
 id      (number) numeric id
 type    (string) always "edit"
-uuid    (string) code uuid
+code_id (string) code uuid
 name    (string, optional) new script name
 code    (string, optional) new ChucK code
 
@@ -111,24 +111,25 @@ code    (string, optional) new ChucK code
 - JSON keys -
 id      (number) numeric id
 type    (string) always "delete"
-uuid    (string) code uuid
+code_id (string) code uuid
 
 === Add Shred ===
 - JSON keys -
 id      (number) numeric id
 type    (string) always "add"
-uuid    (string) code uuid
-
-=== Remove Shred ===
-- JSON keys -
-id      (number) numeric id
-type    (string) always "remove"
-uuid    (string) code uuid
+code_id (string) code uuid
 
 === Replace Shred ===
 - JSON keys -
 id      (number) numeric id
 type    (string) always "replace"
-uuid    (string) code uuid
+code_id (string) code uuid
+
+=== Remove Shred ===
+- JSON keys -
+id      (number) numeric id
+type    (string) always "remove"
+code_id (string) code uuid
+num     (number, optional) delete the num-th version of the shred
 
 

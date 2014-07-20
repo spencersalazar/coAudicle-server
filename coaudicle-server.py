@@ -11,6 +11,26 @@ class Site(server.Site):
 # shorthand convenience method
 bind = types.MethodType
 
+def bindPOST(parent, path):
+    def doit(f):
+        r = resource.Resource()
+        r.render_POST = bind(f, parent)
+        parent.putChild(path, r)
+    return doit
+
+def bindGET(parent, path):
+    def doit(f):
+        r = resource.Resource()
+        r.render_GET = bind(f, parent)
+        parent.putChild(name, r)
+    return doit
+
+def validateAction(action):
+    return True
+
+def sanitizeAction(action):
+    return action
+
 class Room(resource.Resource):
     isLeaf = False
     
@@ -25,37 +45,47 @@ class Room(resource.Resource):
         self._actions = []
         
         # join action
+        @bindPOST(self, 'join')
         def join_POST(self, request):
-            user_id = request.args['id'][0]
-            name = request.args['name'][0]
-            self._members.append({ 'name': name, 'id': user_id })
-            return ''
+            user_id = request.args['user_id'][0]
+            name = request.args['user_name'][0]
+            if not self.isMember(user_id):
+                self._members.append({ 'name': name, 'id': user_id })
+            return json.dumps({'status': 200, 'msg': 'OK'})
         
-        join = resource.Resource()
-        join.render_POST = bind(join_POST, self)
-        self.putChild('join', join)
-        
+        # leave action
+        @bindPOST(self, 'leave')
+        def leave_POST(self, request):
+            user_id = request.args['user_id'][0]
+            for member in self._members:
+                if member['id'] == user_id:
+                    self._members.remove(member)
+            return json.dumps({'status': 200, 'msg': 'OK'})
+                
         # submit action
+        @bindPOST(self, 'submit')
         def submit_POST(self, request):
             user_id = request.args['id'][0]
             action = json.loads(request.args['action'][0])
             
             if not self.isMember(user_id):
-                request.setResponseCode(403)
-                request.setHeader('Content-Type', 'text/plain')
-                return '403 Forbidden'
+                request.setResponseCode(401)
+                return json.dumps({'status': 401, 'msg': 'Unauthorized'})
+            
+            if not validateAction(action):
+                request.setResponseCode(400)
+                return json.dumps({'status': 400, 'msg': 'Bad request'})
+            
+            action = sanitizeAction(action)
             
             action['user_id'] = user_id
             action['id'] = len(self._actions)
             self._actions.append(action)
             
-            return ''
-        
-        submit = resource.Resource()
-        submit.render_POST = bind(submit_POST, self)
-        self.putChild('submit', submit)
+            return json.dumps({'status': 200, 'msg': 'OK'})
         
         # retrieve action(s)
+        @bindGET(self, 'actions')
         def actions_GET(self, request):            
             if 'after' in request.args:
                 last = int(request.args['after'][0])
@@ -63,11 +93,7 @@ class Room(resource.Resource):
                 
             else:
                 return json.dumps(self._actions)
-        
-        actions = resource.Resource()
-        actions.render_GET = bind(actions_GET, self)
-        self.putChild('actions', actions)
-    
+            
     def isMember(self, user_id):
         for member in self._members:
             if member['id'] == user_id:
