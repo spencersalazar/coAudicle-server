@@ -22,7 +22,7 @@ def bindGET(parent, path):
     def doit(f):
         r = resource.Resource()
         r.render_GET = bind(f, parent)
-        parent.putChild(name, r)
+        parent.putChild(path, r)
     return doit
 
 def validateAction(action):
@@ -51,6 +51,7 @@ class Room(resource.Resource):
             name = request.args['user_name'][0]
             if not self.isMember(user_id):
                 self._members.append({ 'name': name, 'id': user_id })
+                self.postAction({ 'user_id': user_id, 'type': 'join', 'name': name })
             return json.dumps({'status': 200, 'msg': 'OK'})
         
         # leave action
@@ -60,12 +61,13 @@ class Room(resource.Resource):
             for member in self._members:
                 if member['id'] == user_id:
                     self._members.remove(member)
+                    self.postAction({ 'user_id': user_id, 'type': 'leave' })
             return json.dumps({'status': 200, 'msg': 'OK'})
                 
         # submit action
         @bindPOST(self, 'submit')
         def submit_POST(self, request):
-            user_id = request.args['id'][0]
+            user_id = request.args['user_id'][0]
             action = json.loads(request.args['action'][0])
             
             if not self.isMember(user_id):
@@ -79,8 +81,7 @@ class Room(resource.Resource):
             action = sanitizeAction(action)
             
             action['user_id'] = user_id
-            action['id'] = len(self._actions)
-            self._actions.append(action)
+            self.postAction(action)
             
             return json.dumps({'status': 200, 'msg': 'OK'})
         
@@ -93,7 +94,11 @@ class Room(resource.Resource):
                 
             else:
                 return json.dumps(self._actions)
-            
+    
+    def postAction(self, action):
+        action['id'] = len(self._actions)
+        self._actions.append(action)
+    
     def isMember(self, user_id):
         for member in self._members:
             if member['id'] == user_id:
