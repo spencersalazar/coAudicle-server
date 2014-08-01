@@ -1,12 +1,19 @@
 
 from twisted.web import server, resource
 from twisted.internet import reactor
+from twisted.python import log
+
 import types, uuid, json, cgi
 
 class Site(server.Site):
     def getResourceFor(self, request):
         request.setHeader('Content-Type', 'application/json')
-        return server.Site.getResourceFor(self, request)
+        try:
+            return server.Site.getResourceFor(self, request)
+        except:
+            log.err('Processing request:')
+            log.err(request)
+            log.err()
 
 # shorthand convenience method
 bind = types.MethodType
@@ -50,8 +57,8 @@ class Room(resource.Resource):
             user_id = request.args['user_id'][0]
             name = request.args['user_name'][0]
             if not self.isMember(user_id):
-                self._members.append({ 'name': name, 'id': user_id })
-                self.postAction({ 'user_id': user_id, 'type': 'join', 'name': name })
+                self._members.append({ 'user_name': name, 'user_id': user_id })
+                self.postAction({ 'user_id': user_id, 'type': 'join', 'user_name': name })
             return json.dumps({'status': 200, 'msg': 'OK'})
         
         # leave action
@@ -59,7 +66,7 @@ class Room(resource.Resource):
         def leave_POST(self, request):
             user_id = request.args['user_id'][0]
             for member in self._members:
-                if member['id'] == user_id:
+                if member['user_id'] == user_id:
                     self._members.remove(member)
                     self.postAction({ 'user_id': user_id, 'type': 'leave' })
             return json.dumps({'status': 200, 'msg': 'OK'})
@@ -96,12 +103,12 @@ class Room(resource.Resource):
                 return json.dumps(self._actions)
     
     def postAction(self, action):
-        action['id'] = len(self._actions)
+        action['aid'] = len(self._actions)
         self._actions.append(action)
     
     def isMember(self, user_id):
         for member in self._members:
-            if member['id'] == user_id:
+            if member['user_id'] == user_id:
                 return True
         return False
     
@@ -109,7 +116,7 @@ class Room(resource.Resource):
         # just list room members
         arr = []
         for member in self._members:
-            arr.append({ 'name': member['name'] })
+            arr.append({ 'user_name': member['user_name'] })
         return json.dumps(arr)
 
 class Rooms(resource.Resource):
