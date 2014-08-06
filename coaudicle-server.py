@@ -3,7 +3,8 @@ from twisted.web import server, resource
 from twisted.internet import reactor
 from twisted.python import log
 
-import types, uuid, json, cgi
+import types, uuid, json, cgi, datetime
+import ago # pip install ago
 
 class Site(server.Site):
     def getResourceFor(self, request):
@@ -44,6 +45,7 @@ class Room(resource.Resource):
     def __init__(self, name, uuid=None):
         resource.Resource.__init__(self)
         
+        self._start = datetime.datetime.today()
         self._members = []
         self._name = name
         if uuid == None:
@@ -118,6 +120,10 @@ class Room(resource.Resource):
         for member in self._members:
             arr.append({ 'user_name': member['user_name'] })
         return json.dumps(arr)
+    
+    def __str__(self):
+        return '%d %s - active %s' % (len(self._members), "member" if len(self._members) == 1 else "members", ago.human(datetime.datetime.today() - self._start, 1, past_tense = '{0}',))
+
 
 class Rooms(resource.Resource):
     isLeaf = False
@@ -135,7 +141,7 @@ class Rooms(resource.Resource):
     def render_GET(self, request):
         arr = []
         for room in self._rooms:
-            arr.append({ 'name': room._name, 'uuid': room._uuid })
+            arr.append({ 'name': room._name, 'uuid': room._uuid, 'info': str(room) })
         return json.dumps(arr)
 
 root = resource.Resource()

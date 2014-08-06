@@ -15,6 +15,7 @@ TODO create room, public/private rooms
     {
         name: "name",
         uuid: "uuid"
+        info: "miscellaneous information (for user display)"
     },
     (info of additional rooms)
 ]
