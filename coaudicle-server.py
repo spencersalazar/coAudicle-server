@@ -7,6 +7,10 @@ import types, uuid, json, cgi
 from datetime import datetime, timedelta
 import ago # pip install ago
 
+
+DEFERRED_TIMEOUT=30.0 # seconds
+
+
 class Site(server.Site):
     def getResourceFor(self, request):
         request.setHeader('Content-Type', 'application/json')
@@ -143,7 +147,7 @@ class Room(resource.Resource):
         # cleanup defers that have timeed out for > 10 seconds
         defers = []
         for defer in self._defers:
-            if (datetime.today() - defer.timestamp) > timedelta(seconds=10):
+            if (datetime.today() - defer.timestamp) > timedelta(seconds=DEFERRED_TIMEOUT):
                 defer.callback(defer.request)
             else:
                 defers.append(defer)
@@ -156,7 +160,7 @@ class Room(resource.Resource):
         return False
     
     def __str__(self):
-        return '%d %s - active %s' % (len(self._members), "member" if len(self._members) == 1 else "members", ago.human(datetime.datetime.today() - self._start, 1, past_tense = '{0}',))
+        return '%d %s - active %s' % (len(self._members), "member" if len(self._members) == 1 else "members", ago.human(datetime.today() - self._start, 1, past_tense = '{0}',))
 
 
 class Rooms(resource.Resource):
